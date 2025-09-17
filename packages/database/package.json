@@ -1,0 +1,43 @@
+{
+  "name": "@errands-buddy/database",
+  "version": "1.0.0",
+  "description": "Database package for ErrandsBuddy platform with PostgreSQL and PostGIS",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "ts-node-dev --respawn --transpile-only src/index.ts",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "migrate": "ts-node src/migrations/migrate.ts",
+    "migrate:create": "ts-node src/migrations/create.ts",
+    "seed": "ts-node src/seeders/seed.ts",
+    "db:reset": "npm run migrate && npm run seed"
+  },
+  "dependencies": {
+    "@errands-buddy/shared-types": "workspace:*",
+    "pg": "^8.11.3",
+    "pg-pool": "^3.6.1",
+    "redis": "^4.6.12",
+    "dotenv": "^16.4.1",
+    "winston": "^3.11.0",
+    "knex": "^3.1.0",
+    "uuid": "^9.0.1",
+    "bcryptjs": "^2.4.3"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.10.9",
+    "@types/uuid": "^9.0.8",
+    "@types/bcryptjs": "^2.4.6",
+    "typescript": "^5.3.3",
+    "ts-node-dev": "^2.0.0",
+    "ts-node": "^10.9.2",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.1.2",
+    "supertest": "^6.3.4"
+  }
+}

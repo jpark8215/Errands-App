@@ -1,0 +1,278 @@
+version: '3.8'
+
+services:
+  # PostgreSQL with PostGIS extension
+  postgres:
+    image: postgis/postgis:15-3.3
+    container_name: errands-buddy-postgres
+    environment:
+      POSTGRES_DB: errands_buddy
+      POSTGRES_USER: errands_user
+      POSTGRES_PASSWORD: errands_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U errands_user -d errands_buddy"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and session management
+  redis:
+    image: redis:7-alpine
+    container_name: errands-buddy-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Elasticsearch for search and analytics
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: errands-buddy-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # Kafka for event streaming
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.4.0
+    container_name: errands-buddy-zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+
+  kafka:
+    image: confluentinc/cp-kafka:7.4.0
+    container_name: errands-buddy-kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "localhost:9092", "--list"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./packages/api-gateway
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-api-gateway
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://errands_user:errands_password@postgres:5432/errands_buddy
+      - REDIS_URL=redis://redis:6379
+      - KAFKA_BROKERS=kafka:9092
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    volumes:
+      - ./packages/api-gateway:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Auth Service
+  auth-service:
+    build:
+      context: ./packages/auth-service
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://errands_user:errands_password@postgres:5432/errands_buddy
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=your-jwt-secret-key
+      - JWT_REFRESH_SECRET=your-refresh-secret-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/auth-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # User Service
+  user-service:
+    build:
+      context: ./packages/user-service
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-user-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://errands_user:errands_password@postgres:5432/errands_buddy
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/user-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Task Service
+  task-service:
+    build:
+      context: ./packages/task-service
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-task-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://errands_user:errands_password@postgres:5432/errands_buddy
+      - REDIS_URL=redis://redis:6379
+      - ELASTICSEARCH_URL=http://elasticsearch:9200
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+    volumes:
+      - ./packages/task-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Matching Service
+  matching-service:
+    build:
+      context: ./packages/matching-service
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-matching-service
+    ports:
+      - "3004:3004"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://errands_user:errands_password@postgres:5432/errands_buddy
+      - REDIS_URL=redis://redis:6379
+      - GOOGLE_MAPS_API_KEY=your-google-maps-api-key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/matching-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Payment Service
+  payment-service:
+    build:
+      context: ./packages/payment-service
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-payment-service
+    ports:
+      - "3005:3005"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://errands_user:errands_password@postgres:5432/errands_buddy
+      - REDIS_URL=redis://redis:6379
+      - STRIPE_SECRET_KEY=your-stripe-secret-key
+      - STRIPE_WEBHOOK_SECRET=your-stripe-webhook-secret
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/payment-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Notification Service
+  notification-service:
+    build:
+      context: ./packages/notification-service
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-notification-service
+    ports:
+      - "3006:3006"
+    environment:
+      - NODE_ENV=development
+      - REDIS_URL=redis://redis:6379
+      - FIREBASE_SERVER_KEY=your-firebase-server-key
+      - TWILIO_ACCOUNT_SID=your-twilio-account-sid
+      - TWILIO_AUTH_TOKEN=your-twilio-auth-token
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/notification-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+  # Location Service
+  location-service:
+    build:
+      context: ./packages/location-service
+      dockerfile: Dockerfile.dev
+    container_name: errands-buddy-location-service
+    ports:
+      - "3007:3007"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://errands_user:errands_password@postgres:5432/errands_buddy
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./packages/location-service:/app
+      - /app/node_modules
+    command: npm run dev
+
+volumes:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  zookeeper_data:
+  kafka_data:
