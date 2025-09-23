@@ -116,6 +116,11 @@ npm run docker:build   # Build Docker images
 npm run build -w @errands-buddy/shared-types
 npm run test -w @errands-buddy/task-service
 npm run type-check -w @errands-buddy/task-service
+
+# Location service specific commands
+npm run dev -w @errands-buddy/location-service
+npm run test:integration -w @errands-buddy/location-service
+npm run test:security -w @errands-buddy/location-service
 ```
 
 ## 🧪 Testing
@@ -151,6 +156,14 @@ REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-jwt-secret-key
 JWT_REFRESH_SECRET=your-refresh-secret-key
 
+# Location Service
+LOCATION_ENCRYPTION_SECRET=your-location-encryption-secret
+LOCATION_ANONYMIZATION_SALT=your-anonymization-salt
+DEFAULT_LOCATION_TTL=3600
+DEFAULT_SEARCH_RADIUS=5000
+DEFAULT_PRECISION_LEVEL=approximate
+GEOFENCE_TTL=86400
+
 # External Services
 GOOGLE_MAPS_API_KEY=your-google-maps-api-key
 STRIPE_SECRET_KEY=your-stripe-secret-key
@@ -167,20 +180,181 @@ TWILIO_AUTH_TOKEN=your-twilio-auth-token
 - **AI Matching**: Geospatial matching with R-tree indexing and multi-criteria analysis
 - **Payment Processing**: Secure payments with Stripe integration and escrow
 - **Real-time Communication**: WebSocket-based messaging and location tracking
+- **Location Tracking**: Real-time GPS tracking with geofencing and privacy controls
 
 ### Safety & Trust
 - **Background Checks**: Comprehensive verification for all Taskers
 - **Mutual Rating System**: 1-5 star ratings and reviews
 - **Emergency Features**: Emergency contact button and safety check-ins
-- **Location Privacy**: Configurable location sharing controls
+- **Location Privacy**: Configurable location sharing controls with encryption
+- **Geofencing**: Dynamic task boundaries with real-time event detection
+- **Emergency Access**: Secure emergency location access with audit logging
 
 ### Performance
 - **Sub-second Response Times**: Critical matching operations
 - **Horizontal Scalability**: Kubernetes orchestration
-- **Geospatial Optimization**: PostGIS for efficient location queries
-- **Caching Strategy**: Redis for real-time data and session management
+- **Geospatial Optimization**: PostGIS for efficient location queries with spatial indexing
+- **Caching Strategy**: Redis for real-time data, session management, and geospatial queries
+- **Real-time Updates**: WebSocket connections for instant location and task updates
+
+### 📍 Location Service Features
+
+The location service provides comprehensive real-time location tracking capabilities:
+
+#### Real-time Tracking
+- **WebSocket Communication**: Instant location updates via Socket.IO
+- **Route Tracking**: Complete route history during task execution
+- **Nearby Discovery**: Find available taskers within configurable radius
+- **Live Updates**: Real-time location sharing between task participants
+
+#### Geofencing System
+- **Dynamic Geofences**: Automatic creation for pickup, delivery, and service areas
+- **Event Detection**: Real-time enter, exit, and dwell event notifications
+- **Task Boundaries**: Configurable boundaries for different task types
+- **Safety Zones**: Emergency geofences for enhanced security
+
+#### Privacy & Security
+- **Data Encryption**: AES-256-GCM encryption for sensitive location data
+- **Precision Controls**: Configurable sharing levels (exact, approximate, city, disabled)
+- **Access Controls**: Granular permissions for different user types
+- **Data Retention**: Automatic cleanup based on user preferences
+- **Emergency Access**: Secure emergency location access with full audit trails
+
+#### Performance & Scalability
+- **Redis Caching**: High-performance location caching with TTL management
+- **Spatial Indexing**: PostGIS spatial indexes for efficient geospatial queries
+- **Rate Limiting**: 60 location updates per minute per user
+- **Horizontal Scaling**: Stateless design for easy scaling
+
+## 🌐 Location Service Architecture
+
+```
+┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
+│   Mobile Apps   │    │   Web Client    │    │   API Gateway   │
+└─────────┬───────┘    └─────────┬───────┘    └─────────┬───────┘
+          │                      │                      │
+          └──────────────────────┼──────────────────────┘
+                                 │
+                    ┌────────────┴───────────┐
+                    │   Location Service     │
+                    │   (Port 3007)          │
+                    └────────────┬───────────┘
+                                 │
+          ┌──────────────────────┼──────────────────────┐
+          │                      │                      │
+    ┌─────┴─────┐         ┌──────┴──────┐        ┌──────┴──────┐
+    │   Redis   │         │ PostgreSQL  │        │  WebSocket  │
+    │  (Cache)  │         │  (PostGIS)  │        │   Server    │
+    └───────────┘         └─────────────┘        └─────────────┘
+```
+
+## 📡 Location Service API Reference
+
+### Location Updates
+- `POST /api/location/update` - Update user location
+- `GET /api/location/current/:userId?` - Get current location
+- `GET /api/location/nearby` - Find nearby users
+
+### Tracking
+- `POST /api/location/tracking/start` - Start location tracking
+- `POST /api/location/tracking/stop` - Stop location tracking
+- `GET /api/location/tracking/route/:taskId/:userId?` - Get route data
+
+### Privacy
+- `GET /api/location/privacy/settings` - Get privacy settings
+- `PUT /api/location/privacy/settings` - Update privacy settings
+
+### Geofencing
+- `POST /api/location/geofence/create` - Create geofence
+- `GET /api/location/geofence/task/:taskId` - Get task geofences
+- `GET /api/location/geofence/events/:taskId` - Get geofence events
+
+### Emergency
+- `POST /api/location/emergency/locate` - Emergency location access
+
+## 🔌 WebSocket Events
+
+### Client → Server
+- `location:update` - Send location update
+- `location:start-tracking` - Start tracking session
+- `location:stop-tracking` - Stop tracking session
+- `location:privacy-update` - Update privacy settings
+- `location:subscribe-geofence` - Subscribe to geofence events
+
+### Server → Client
+- `location:update-success` - Location update confirmation
+- `location:updated` - Location update from other users
+- `location:tracking-started` - Tracking session started
+- `location:tracking-stopped` - Tracking session stopped
+- `geofence:event` - Geofence event notification
+- `location:nearby-update` - Nearby user location update
+- `location:error` - Error notifications
+
+## 🗄️ Database Schema
+
+### Core Tables
+- `location_tracking_sessions` - Active tracking sessions
+- `route_points` - Location history during tracking
+- `geofences` - Geofence definitions
+- `geofence_events` - Geofence event history
+- `location_privacy_settings` - User privacy preferences
+- `location_analytics` - Aggregated analytics data
+
+### Spatial Indexes
+- PostGIS spatial indexes for efficient geospatial queries
+- R-tree indexing for nearby user searches
+- Optimized indexes for time-based queries
+
+## 🔐 Privacy & Security Features
+
+### Precision Levels
+- **Exact**: Full precision coordinates
+- **Approximate**: ~100m accuracy radius
+- **City**: ~5km accuracy radius
+- **Disabled**: No location sharing
+
+### Data Protection
+- AES-256-GCM encryption for sensitive location data
+- Automatic anonymization after configurable time periods
+- Configurable data retention policies
+- Emergency access controls with audit logging
+
+### Sharing Controls
+- Share with taskers (nearby user discovery)
+- Share with clients (task participants)
+- Geofence notifications
+- Emergency access permissions
+
+### Security Measures
+- JWT-based authentication for all endpoints
+- WebSocket authentication via handshake
+- Role-based access controls
+- Encryption at rest for sensitive location data
+- TLS encryption for all communications
+- Input validation and sanitization
+- Rate limiting and DDoS protection
+
+### Privacy Compliance
+- GDPR-compliant data handling
+- User consent management
+- Right to be forgotten implementation
+- Data minimization principles
 
 ## 🚀 Deployment
+
+### Location Service Docker Deployment
+
+```bash
+# Build location service image
+docker build -t errands-buddy/location-service ./packages/location-service
+
+# Run location service container
+docker run -p 3007:3007 --env-file .env errands-buddy/location-service
+
+# Development with Docker Compose
+cd packages/location-service
+docker-compose -f docker-compose.dev.yml up
+```
 
 ### Staging
 ```bash
@@ -204,8 +378,9 @@ The CI/CD pipeline automatically:
 
 - **Application Metrics**: Request latency, error rates, task completion rates
 - **Business Metrics**: Matching efficiency, user retention, revenue per transaction
-- **Infrastructure Metrics**: CPU, memory, database performance
-- **Alerting**: Automated alerts for performance thresholds
+- **Location Metrics**: Location update frequency, geofence event rates, privacy setting distributions
+- **Infrastructure Metrics**: CPU, memory, database performance, Redis cache hit rates
+- **Alerting**: Automated alerts for performance thresholds and location service health
 
 ## 🛟 Troubleshooting
 
@@ -230,6 +405,24 @@ The CI/CD pipeline automatically:
     npm run build -w @errands-buddy/shared-types
     ```
 
+- **Location service WebSocket connection issues**
+  - Ensure Redis is running and accessible
+  - Check JWT token is valid and not expired
+  - Verify CORS settings allow your client origin
+  - Check firewall settings for port 3007
+
+- **PostGIS extension not found**
+  - Install PostGIS extension in PostgreSQL:
+    ```sql
+    CREATE EXTENSION IF NOT EXISTS postgis;
+    ```
+  - Ensure PostgreSQL version supports PostGIS
+
+- **Location updates not persisting**
+  - Run database migrations: `npm run migrate -w @errands-buddy/location-service`
+  - Check database connection settings
+  - Verify user has proper database permissions
+
 ## 🤝 Contributing
 
 1. Fork the repository
@@ -247,3 +440,44 @@ For support and questions:
 - Check the documentation in the `/docs` directory
 
 ---
+
+## 📣 Notification Service
+
+Notification and Communication microservice (port 3006).
+
+- Push notifications via Firebase Cloud Messaging (FCM)
+- Device token registration and management
+- Notification templates (Handlebars) per event type
+- User notification preferences stored in Redis
+- Real-time in-app messaging using Socket.IO
+- Optional AES-256-GCM message encryption for relayed messages
+- Emergency alert endpoint with location sharing
+- Placeholder integration for masked calling (Twilio Proxy/Voice)
+
+### Environment
+Set the following variables (docker-compose already passes placeholders):
+
+- `REDIS_URL`
+- `FIREBASE_PROJECT_ID`, `FIREBASE_CLIENT_EMAIL`, `FIREBASE_PRIVATE_KEY`
+- `JWT_SECRET`
+- `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_PROXY_SERVICE_SID`
+- `PORT`
+
+### REST Endpoints
+
+- `GET /health` – service status
+- `POST /devices/register` – register a device token `{ userId: uuid, token: string }`
+- `POST /devices/unregister` – unregister a device token `{ userId: uuid, token: string }`
+- `POST /notifications/send` – send a push `{ userId, eventType, data? }`
+- `GET /preferences/:userId` – fetch notification prefs
+- `PUT /preferences/:userId` – update prefs `{ push?, email?, sms? }`
+- `POST /emergency/alert` – broadcast emergency alert `{ userId, userName, lat, lng, taskId?, notifyUserIds[] }`
+- `POST /calls/masked` – create masked calling session (placeholder)
+
+### WebSocket
+
+- Namespace: `/messaging`
+- Auth: `handshake.auth.token` must be a JWT `{ userId }` signed with `JWT_SECRET`
+- Events:
+  - `join_task` with `{ taskId }`
+  - `message` with `{ taskId, toUserId?, text }` (optionally AES-256-GCM encrypted server-side if `MSG_ENCRYPTION_KEY_BASE64` is set)
