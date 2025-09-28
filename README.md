@@ -1,6 +1,6 @@
 # ErrandsBuddy - Peer-to-Peer Task Marketplace
 
-A comprehensive mobile-first platform that connects task requesters with nearby Taskers for immediate, non-food-related tasks. Built with a microservices architecture and AI-powered matching algorithms.
+A comprehensive mobile-first platform that connects task requesters with nearby Taskers for immediate, non-food-related tasks. Built with a microservices architecture and matching algorithms.
 
 ## Architecture
 
