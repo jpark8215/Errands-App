@@ -2,7 +2,7 @@
 
 A comprehensive mobile-first platform that connects task requesters with nearby Taskers for immediate, non-food-related tasks. Built with a microservices architecture and AI-powered matching algorithms.
 
-## 🏗️ Architecture
+## Architecture
 
 - **Backend**: Node.js/TypeScript with Express.js and GraphQL
 - **Database**: PostgreSQL with PostGIS for geospatial queries
@@ -12,7 +12,7 @@ A comprehensive mobile-first platform that connects task requesters with nearby 
 - **Mobile**: Swift/SwiftUI (iOS), Kotlin/Jetpack Compose (Android)
 - **Infrastructure**: Docker with Kubernetes orchestration
 
-## 📦 Monorepo Structure
+## Monorepo Structure
 
 ```
 ErrandsBuddy/
@@ -33,7 +33,7 @@ ErrandsBuddy/
 └── scripts/                   # Database initialization and utilities
 ```
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -80,7 +80,7 @@ ErrandsBuddy/
    - Notification Service: http://localhost:3006
    - Location Service: http://localhost:3007
 
-## 🛠️ Development Commands
+## Development Commands
 
 ```bash
 # Install dependencies
@@ -123,7 +123,7 @@ npm run test:integration -w @errands-buddy/location-service
 npm run test:security -w @errands-buddy/location-service
 ```
 
-## 🧪 Testing
+## Testing
 
 We use Jest (with `ts-jest`) for TypeScript unit tests across services.
 
@@ -141,7 +141,7 @@ Notes:
 - `jest.config.js` uses `moduleNameMapper` to map `@errands-buddy/*` to `packages/*/src` so tests can import local sources without building first.
 - TypeScript path aliases are defined in the root `tsconfig.json` (`baseUrl` + `paths`). Package `tsconfig.json` files (e.g., `packages/task-service/tsconfig.json`) extend from the root so editors and type-checking resolve aliases consistently.
 
-## 🔧 Configuration
+## Configuration
 
 ### Environment Variables
 
@@ -172,7 +172,7 @@ TWILIO_ACCOUNT_SID=your-twilio-account-sid
 TWILIO_AUTH_TOKEN=your-twilio-auth-token
 ```
 
-## 📊 Key Features
+## Key Features
 
 ### Core Functionality
 - **User Registration**: Multi-step verification with phone and identity verification
@@ -197,7 +197,7 @@ TWILIO_AUTH_TOKEN=your-twilio-auth-token
 - **Caching Strategy**: Redis for real-time data, session management, and geospatial queries
 - **Real-time Updates**: WebSocket connections for instant location and task updates
 
-### 📍 Location Service Features
+### Location Service Features
 
 The location service provides comprehensive real-time location tracking capabilities:
 
@@ -226,7 +226,7 @@ The location service provides comprehensive real-time location tracking capabili
 - **Rate Limiting**: 60 location updates per minute per user
 - **Horizontal Scaling**: Stateless design for easy scaling
 
-## 🌐 Location Service Architecture
+## Location Service Architecture
 
 ```
 ┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
@@ -248,7 +248,7 @@ The location service provides comprehensive real-time location tracking capabili
     └───────────┘         └─────────────┘        └─────────────┘
 ```
 
-## 📡 Location Service API Reference
+## Location Service API Reference
 
 ### Location Updates
 - `POST /api/location/update` - Update user location
@@ -272,7 +272,7 @@ The location service provides comprehensive real-time location tracking capabili
 ### Emergency
 - `POST /api/location/emergency/locate` - Emergency location access
 
-## 🔌 WebSocket Events
+## WebSocket Events
 
 ### Client → Server
 - `location:update` - Send location update
@@ -290,7 +290,7 @@ The location service provides comprehensive real-time location tracking capabili
 - `location:nearby-update` - Nearby user location update
 - `location:error` - Error notifications
 
-## 🗄️ Database Schema
+## Database Schema
 
 ### Core Tables
 - `location_tracking_sessions` - Active tracking sessions
@@ -305,7 +305,7 @@ The location service provides comprehensive real-time location tracking capabili
 - R-tree indexing for nearby user searches
 - Optimized indexes for time-based queries
 
-## 🔐 Privacy & Security Features
+## Privacy & Security Features
 
 ### Precision Levels
 - **Exact**: Full precision coordinates
@@ -340,7 +340,7 @@ The location service provides comprehensive real-time location tracking capabili
 - Right to be forgotten implementation
 - Data minimization principles
 
-## 🚀 Deployment
+## Deployment
 
 ### Location Service Docker Deployment
 
@@ -374,7 +374,7 @@ The CI/CD pipeline automatically:
 - Deploys to staging/production environments
 - Monitors service health
 
-## 📈 Monitoring
+## Monitoring
 
 - **Application Metrics**: Request latency, error rates, task completion rates
 - **Business Metrics**: Matching efficiency, user retention, revenue per transaction
@@ -382,7 +382,7 @@ The CI/CD pipeline automatically:
 - **Infrastructure Metrics**: CPU, memory, database performance, Redis cache hit rates
 - **Alerting**: Automated alerts for performance thresholds and location service health
 
-## 🛟 Troubleshooting
+## Troubleshooting
 
 - **npm/npx not recognized on Windows**
   - Install Node.js from https://nodejs.org and restart your terminal/IDE. Verify with `node -v` and `npm -v`.
@@ -423,7 +423,7 @@ The CI/CD pipeline automatically:
   - Check database connection settings
   - Verify user has proper database permissions
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -432,7 +432,7 @@ The CI/CD pipeline automatically:
 5. Open a Pull Request
 
 
-## 🆘 Support
+## Support
 
 For support and questions:
 - Create an issue in the repository
@@ -441,7 +441,7 @@ For support and questions:
 
 ---
 
-## 📣 Notification Service
+## Notification Service
 
 Notification and Communication microservice (port 3006).
 
